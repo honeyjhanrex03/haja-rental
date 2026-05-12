@@ -20,6 +20,7 @@ class Order {
   final String? deliveryAddress;
   final String? couponCode;
   final double? discountAmount;
+  final String? paymentMethod;
 
   Order({
     required this.id,
@@ -41,6 +42,7 @@ class Order {
     this.deliveryAddress,
     this.couponCode,
     this.discountAmount,
+    this.paymentMethod,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -65,6 +67,7 @@ class Order {
       deliveryAddress: json['delivery_address']?.toString(),
       couponCode: json['coupon_code']?.toString(),
       discountAmount: (json['discount_amount'] as num?)?.toDouble(),
+      paymentMethod: json['payment_method']?.toString(),
     );
   }
 
@@ -97,6 +100,7 @@ class Order {
       'delivery_address': deliveryAddress,
       'coupon_code': couponCode,
       'discount_amount': discountAmount,
+      'payment_method': paymentMethod,
     };
   }
 

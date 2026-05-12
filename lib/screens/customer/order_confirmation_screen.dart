@@ -192,6 +192,7 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
         deliveryAddress: _addressController.text.trim(),
         couponCode: _appliedCoupon?.code,
         discountAmount: discount,
+        paymentMethod: _paymentMethod,
       );
 
       await supabase.from('orders').insert(order.toJson());

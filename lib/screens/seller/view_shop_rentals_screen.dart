@@ -343,7 +343,6 @@ class _ViewShopRentalsScreenState extends ConsumerState<ViewShopRentalsScreen> w
   Widget _buildOrderCard(Order order) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -355,62 +354,125 @@ class _ViewShopRentalsScreenState extends ConsumerState<ViewShopRentalsScreen> w
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  order.itemImageUrl,
-                  height: 60,
-                  width: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
-                ),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(order.itemName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    Text('Status: ${order.status.displayName.toUpperCase()}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ),
-              Text('₱${order.totalPrice}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-            ],
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        collapsedShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            order.itemImageUrl,
+            height: 60,
+            width: 50,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
           ),
-          const SizedBox(height: 15),
-          if (order.status == OrderStatus.toPay)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isAccepting ? null : () => _updateOrderStatus(order, 'to_ship', 'Order accepted! Moving to shipping.'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        title: Text(order.itemName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(
+          'Status: ${order.status.displayName.toUpperCase()}', 
+          style: TextStyle(
+            fontSize: 10, 
+            fontWeight: FontWeight.bold,
+            color: order.status == OrderStatus.toPay ? Colors.orange : Colors.blue
+          )
+        ),
+        trailing: Text('₱${order.totalPrice}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(),
+                const SizedBox(height: 10),
+                
+                // ORDER DETAILS SECTION
+                const Text('ORDER DETAILS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 10),
+                _buildOrderDetailRow(Icons.straighten, 'Size', order.size ?? 'Standard'),
+                _buildOrderDetailRow(Icons.payments_outlined, 'Payment', order.paymentMethod ?? 'Not Specified'),
+                
+                if (order.isRental) ...[
+                   _buildOrderDetailRow(Icons.calendar_today, 'Pickup', order.pickupDate != null ? "${order.pickupDate!.day}/${order.pickupDate!.month}/${order.pickupDate!.year}" : 'N/A'),
+                   _buildOrderDetailRow(Icons.keyboard_return, 'Return', order.returnDate != null ? "${order.returnDate!.day}/${order.returnDate!.month}/${order.returnDate!.year}" : 'N/A'),
+                ],
+                
+                const SizedBox(height: 15),
+                
+                // DELIVERY ADDRESS SECTION
+                const Text('DELIVERY ADDRESS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, color: AppColors.gold, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          order.deliveryAddress ?? 'No address provided',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: _isAccepting 
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Accept Order', style: TextStyle(color: Colors.white)),
-              ),
+                
+                const SizedBox(height: 20),
+                
+                // ACTIONS
+                if (order.status == OrderStatus.toPay)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isAccepting ? null : () => _updateOrderStatus(order, 'to_ship', 'Order accepted! Moving to shipping.'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: _isAccepting 
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Accept Order', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                if (order.status == OrderStatus.toShip)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isAccepting ? null : () => _updateOrderStatus(order, 'to_receive', 'Order marked as shipped!'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: _isAccepting 
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Mark as Shipped', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+              ],
             ),
-          if (order.status == OrderStatus.toShip)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isAccepting ? null : () => _updateOrderStatus(order, 'to_receive', 'Order marked as shipped!'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: _isAccepting 
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Mark as Shipped', style: TextStyle(color: Colors.white)),
-              ),
-            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey),
+          const SizedBox(width: 10),
+          Text('$label: ', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         ],
       ),
     );
