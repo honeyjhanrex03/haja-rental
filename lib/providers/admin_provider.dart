@@ -86,7 +86,7 @@ class AdminProvider extends Notifier<AsyncValue<AdminStats>> {
     await _supabase.from('coupons').delete().eq('id', id);
   }
 
-  Future<Coupon?> validateCoupon(String code) async {
+  Future<Coupon?> validateCoupon(String code, String userId) async {
     final res = await _supabase
         .from('coupons')
         .select()
@@ -96,7 +96,23 @@ class AdminProvider extends Notifier<AsyncValue<AdminStats>> {
     
     if (res == null) return null;
     final coupon = Coupon.fromJson(res);
-    return coupon.isValid ? coupon : null;
+    
+    if (!coupon.isValid) return null;
+
+    final normalizedCode = code.toUpperCase();
+    // Check if the user has already used this specific coupon code
+    final usageCheck = await _supabase
+        .from('orders')
+        .select('id')
+        .eq('customer_id', userId)
+        .eq('coupon_code', normalizedCode)
+        .limit(1);
+    
+    if ((usageCheck as List).isNotEmpty) {
+      throw Exception('You have already used this discount code!');
+    }
+
+    return coupon;
   }
 }
 

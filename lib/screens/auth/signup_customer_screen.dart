@@ -203,7 +203,10 @@ class _SignupCustomerScreenState extends ConsumerState<SignupCustomerScreen> {
                         const SizedBox(height: 15),
                         SocialLoginButton(
                           label: 'Continue with Google',
-                          onPressed: () => ref.read(authProvider.notifier).signInWithGoogle(role: _selectedRole),
+                          onPressed: () => ref.read(authProvider.notifier).signInWithGoogle(
+                            role: _selectedRole,
+                            isRegistration: true,
+                          ),
                           iconPath: 'assets/images/google.webp',
                         ),
                         const SizedBox(height: 10),

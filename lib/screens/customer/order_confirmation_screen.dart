@@ -64,12 +64,15 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
   }
 
   Future<void> _validateCoupon() async {
+    final user = ref.read(authProvider).user;
+    if (user == null) return;
+
     final code = _couponController.text.trim();
     if (code.isEmpty) return;
 
     setState(() => _isValidatingCoupon = true);
     try {
-      final coupon = await ref.read(adminProvider.notifier).validateCoupon(code);
+      final coupon = await ref.read(adminProvider.notifier).validateCoupon(code, user.id);
       setState(() {
         _appliedCoupon = coupon;
         _isValidatingCoupon = false;
@@ -187,6 +190,8 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
         size: _selectedSize,
         sellerId: actualSellerId ?? widget.item.sellerId,
         deliveryAddress: _addressController.text.trim(),
+        couponCode: _appliedCoupon?.code,
+        discountAmount: discount,
       );
 
       await supabase.from('orders').insert(order.toJson());

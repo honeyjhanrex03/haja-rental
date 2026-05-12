@@ -72,17 +72,25 @@ class AuthProvider extends Notifier<AuthState> {
   }
   
   // Google Sign In
-  Future<void> signInWithGoogle({UserRole? role}) async {
+  Future<void> signInWithGoogle({UserRole? role, bool isRegistration = false}) async {
+    debugPrint('Google Sign-In started (isRegistration: $isRegistration)...');
     state = state.copyWith(isLoading: true, error: null);
     try {
       // 1. Trigger Google Sign-In
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: '626113412819-tv9fbh0159mtfvlbnhsu7fmsr50kejb0.apps.googleusercontent.com',
+      );
+      
+      debugPrint('Attempting to open Google Sign-In dialog...');
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
+        debugPrint('Google Sign-In was cancelled by user.');
         state = state.copyWith(isLoading: false);
         return;
       }
+
+      debugPrint('Google Sign-In successful for: ${googleUser.email}');
 
       // 2. Get authentication details
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -101,15 +109,30 @@ class AuthProvider extends Notifier<AuthState> {
       );
 
       if (response.user != null) {
-        // 4. Load or create profile with the selected role
-        await _loadProfile(response.user!.id, role: role);
+        debugPrint('Supabase Auth successful. Checking Haja Profile...');
+        // 4. Load profile with strict checking
+        await _loadProfile(
+          response.user!.id, 
+          role: role, 
+          isRegistration: isRegistration
+        );
+        debugPrint('Profile check passed. User is authorized.');
       } else {
         throw Exception('Sign in failed');
       }
     } catch (e) {
+      debugPrint('🛑 Google Sign-In BLOCKED: $e');
+      
+      // CRITICAL: Clear the session immediately if it was a blocked login
+      await _supabase.auth.signOut();
+      
       state = state.copyWith(
+        user: null,
+        isAuthenticated: false,
         isLoading: false, 
-        error: 'Google Sign-In failed: ${e.toString()}'
+        error: e.toString().contains('Account not found') 
+          ? 'Account not found. Please Sign Up first to choose your role (Seller or Customer).'
+          : 'Sign-In failed: ${e.toString()}'
       );
     }
   }
@@ -189,7 +212,7 @@ class AuthProvider extends Notifier<AuthState> {
     }
   }
   
-  Future<void> _loadProfile(String userId, {UserRole? role}) async {
+  Future<void> _loadProfile(String userId, {UserRole? role, bool isRegistration = false}) async {
     try {
       final response = await _supabase
           .from('profiles')
@@ -203,8 +226,27 @@ class AuthProvider extends Notifier<AuthState> {
       
       Map<String, dynamic> data;
       
+      // STRICT CHECK: If we are on the Login screen, we MUST find an existing profile
+      if (!isRegistration) {
+        if (response == null) {
+          debugPrint('No profile found for this user in database.');
+          throw Exception('Account not found. Please Sign Up first.');
+        }
+
+        // Also block if the auth account was created in the last 60 seconds (prevents trigger-race-conditions)
+        final createdAtStr = currentUser?.createdAt;
+        if (createdAtStr != null) {
+          final createdAt = DateTime.parse(createdAtStr);
+          final now = DateTime.now().toUtc();
+          if (now.difference(createdAt).inSeconds < 60) {
+             debugPrint('Account is too new to be an existing user. Redirecting to Sign Up.');
+             throw Exception('Account not found. Please Sign Up first.');
+          }
+        }
+      }
+
       if (response == null) {
-        // Create profile if missing
+        // Create profile if missing (only allowed in isRegistration mode)
         data = {
           'id': userId,
           'full_name': metaName ?? 'New User',
@@ -391,9 +433,14 @@ class AuthProvider extends Notifier<AuthState> {
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
+      debugPrint('Auth status check failed: $e');
+      // If profile loading fails (e.g. account found but role not picked), sign out
+      await logout();
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: e.toString().contains('Account not found') 
+          ? 'Session expired or profile not found. Please Sign In again.'
+          : null, // Don't show scary errors on splash screen unless necessary
       );
     }
   }

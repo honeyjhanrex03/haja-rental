@@ -76,7 +76,12 @@ class RouterNotifier extends ChangeNotifier {
                        state.matchedLocation == RouteName.login ||
                        state.matchedLocation == RouteName.signup;
 
-    if (!isAuthenticated) {
+    // We only allow users to proceed if they are authenticated AND have a profile loaded
+    final isFullyRegistered = isAuthenticated && authState.user != null;
+
+    if (!isFullyRegistered) {
+      // If we are already on an auth path, stay there. 
+      // Otherwise, go to splash to re-verify status.
       return isAuthPath ? null : RouteName.splash;
     }
 

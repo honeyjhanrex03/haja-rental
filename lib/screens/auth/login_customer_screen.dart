@@ -136,7 +136,7 @@ class _LoginCustomerScreenState extends ConsumerState<LoginCustomerScreen> {
                     // Google Button
                     SocialLoginButton(
                       label: 'Continue with Google',
-                      onPressed: () => ref.read(authProvider.notifier).signInWithGoogle(),
+                      onPressed: () => ref.read(authProvider.notifier).signInWithGoogle(isRegistration: false),
                       iconPath: 'assets/images/google.webp',
                     ),
                     const SizedBox(height: 10),

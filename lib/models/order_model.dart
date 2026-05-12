@@ -18,6 +18,8 @@ class Order {
   final bool isRental;
   final String sellerId;
   final String? deliveryAddress;
+  final String? couponCode;
+  final double? discountAmount;
 
   Order({
     required this.id,
@@ -37,6 +39,8 @@ class Order {
     required this.isRental,
     required this.sellerId,
     this.deliveryAddress,
+    this.couponCode,
+    this.discountAmount,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -59,6 +63,8 @@ class Order {
       sellerId: json['seller_id']?.toString() ?? 
                 json['items']?['seller_id']?.toString() ?? '',
       deliveryAddress: json['delivery_address']?.toString(),
+      couponCode: json['coupon_code']?.toString(),
+      discountAmount: (json['discount_amount'] as num?)?.toDouble(),
     );
   }
 
@@ -89,6 +95,8 @@ class Order {
       'is_rental': isRental,
       'seller_id': sellerId,
       'delivery_address': deliveryAddress,
+      'coupon_code': couponCode,
+      'discount_amount': discountAmount,
     };
   }
 
