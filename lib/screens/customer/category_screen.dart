@@ -43,25 +43,42 @@ class _CustomerCategoryScreenState extends ConsumerState<CustomerCategoryScreen>
     final categoriesAsync = ref.watch(categoriesProvider(widget.isRental == false ? CategoryType.shop : CategoryType.rental));
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.primary,
       drawer: _buildDrawer(context, ref),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: Column(
         children: [
           _buildHeader(),
           _buildTabs(),
-          categoriesAsync.when(
-            data: (categories) => _buildCategoryFilter(categories),
-            loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator())),
-            error: (e, s) => const SizedBox(height: 60, child: Center(child: Text('Error loading categories'))),
-          ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildItemsGrid(ref, gender: 'Women'),
-                _buildItemsGrid(ref, gender: 'Men'),
-              ],
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  categoriesAsync.when(
+                    data: (categories) => _buildCategoryFilter(categories),
+                    loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator())),
+                    error: (e, s) => const SizedBox(height: 60, child: Center(child: Text('Error loading categories'))),
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildItemsGrid(ref, gender: 'Women'),
+                        _buildItemsGrid(ref, gender: 'Men'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -281,10 +298,6 @@ class _CustomerCategoryScreenState extends ConsumerState<CustomerCategoryScreen>
       padding: const EdgeInsets.only(top: 50, left: 20, right: 20, bottom: 20),
       decoration: const BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
       ),
       child: Column(
         children: [

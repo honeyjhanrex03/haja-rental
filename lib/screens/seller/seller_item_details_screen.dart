@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_router.dart';
 import '../../widgets/seller_bottom_bar.dart';
+import '../../providers/database_provider.dart';
 
 class SellerItemDetailsScreen extends ConsumerWidget {
   const SellerItemDetailsScreen({super.key});
@@ -153,14 +154,27 @@ class SellerItemDetailsScreen extends ConsumerWidget {
               ),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.inputBackground.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(8),
+              Consumer(
+                builder: (context, ref, child) {
+                  final unreadCount = ref.watch(totalNotificationCountProvider);
+                  return GestureDetector(
+                    onTap: () => context.push(RouteName.customerNotifications),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.inputBackground.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Badge(
+                        label: Text(unreadCount.toString()),
+                        isLabelVisible: unreadCount > 0,
+                        backgroundColor: Colors.red,
+                        child: const Icon(Icons.notifications_none, color: AppColors.white, size: 20),
+                      ),
                     ),
-                    child: const Icon(Icons.notifications_none, color: AppColors.white, size: 20),
-                  ),
+                  );
+                },
+              ),
                   const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.all(8),

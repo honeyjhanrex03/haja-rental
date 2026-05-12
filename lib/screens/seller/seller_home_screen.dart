@@ -23,93 +23,103 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.cardBackground,
       drawer: _buildDrawer(context),
       bottomNavigationBar: SellerBottomNavBar(currentIndex: 0),
       body: Column(
         children: [
           _buildCustomHeader(screenHeight),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Hi, ${user?.fullName.split(' ').first ?? 'Seller'}!',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.gold,
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hi, ${user?.fullName.split(' ').first ?? 'Seller'}!',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.gold,
+                      ),
                     ),
-                  ),
-                  const Text(
-                    'What would you like to manage today?',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.textPlaceholder,
+                    const Text(
+                      'What would you like to manage today?',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.textPlaceholder,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Stats Section
-                  SizedBox(
-                    height: 110,
-                    child: ref.watch(sellerAnalyticsProvider).when(
-                      data: (stats) => ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(vertical: 5),
+                    const SizedBox(height: 20),
+                    
+                    // Stats Section
+                    SizedBox(
+                      height: 110,
+                      child: ref.watch(sellerAnalyticsProvider).when(
+                        data: (stats) => ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          children: [
+                            _buildStatCard('Total Views', stats['views'].toString(), Icons.visibility_outlined),
+                            _buildStatCard('Favorites', stats['favorites'].toString(), Icons.favorite_border),
+                            _buildStatCard('Earnings', '₱${stats['earnings']}', Icons.account_balance_wallet_outlined),
+                          ],
+                        ),
+                        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.gold)),
+                        error: (e, s) => const Text('Failed to load stats'),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Main Actions Grid
+                    Expanded(
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
                         children: [
-                          _buildStatCard('Total Views', stats['views'].toString(), Icons.visibility_outlined),
-                          _buildStatCard('Favorites', stats['favorites'].toString(), Icons.favorite_border),
-                          _buildStatCard('Earnings', '₱${stats['earnings']}', Icons.account_balance_wallet_outlined),
+                          _buildActionCard(
+                            'View Rentals',
+                            Icons.vpn_key_outlined,
+                            AppColors.gold,
+                            onTap: () => context.push(RouteName.sellerViewShopRentals, extra: 0),
+                          ),
+                          _buildActionCard(
+                            'Manage Orders',
+                            Icons.shopping_bag_outlined,
+                            AppColors.primary,
+                            onTap: () => context.push(RouteName.sellerViewShopRentals, extra: 2),
+                          ),
+                          _buildActionCard(
+                            'Shop Items',
+                            Icons.storefront_outlined,
+                            Colors.purple,
+                            onTap: () => context.push(RouteName.sellerViewShopRentals, extra: 1),
+                          ),
+                          _buildActionCard(
+                            'Add Listing',
+                            Icons.add_circle_outline,
+                            Colors.green,
+                            onTap: () => context.push(RouteName.sellerAddListing),
+                          ),
                         ],
                       ),
-                      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.gold)),
-                      error: (e, s) => const Text('Failed to load stats'),
                     ),
-                  ),
-                                   const SizedBox(height: 20),
-                  
-                  // Main Actions Grid
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 15,
-                      mainAxisSpacing: 15,
-                      children: [
-                        _buildActionCard(
-                          'View Rentals',
-                          Icons.vpn_key_outlined,
-                          AppColors.gold,
-                          onTap: () => context.push(RouteName.sellerViewShopRentals, extra: 0),
-                        ),
-                        _buildActionCard(
-                          'Manage Orders',
-                          Icons.shopping_bag_outlined,
-                          AppColors.primary,
-                          onTap: () => context.push(RouteName.sellerViewShopRentals, extra: 2),
-                        ),
-                        _buildActionCard(
-                          'Shop Items',
-                          Icons.storefront_outlined,
-                          Colors.purple,
-                          onTap: () => context.push(RouteName.sellerViewShopRentals, extra: 1),
-                        ),
-                        _buildActionCard(
-                          'Add Listing',
-                          Icons.add_circle_outline,
-                          Colors.green,
-                          onTap: () => context.push(RouteName.sellerAddListing),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
           ),
@@ -193,17 +203,13 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
   }
 
   Widget _buildCustomHeader(double screenHeight) {
-    final user = ref.read(authProvider).user; // Use read here since it's already watched in build
+    final user = ref.read(authProvider).user; 
     
     return Container(
       height: screenHeight * 0.18,
       padding: const EdgeInsets.only(top: 50, left: 20, right: 20, bottom: 20),
       decoration: const BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -292,7 +298,7 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
                             title: const Text('Payout Methods'),
                             onTap: () {
                               Navigator.pop(context);
-                              AppAlert.showInfo(context, 'Payout methods configuration will be available soon.');
+                              context.push(RouteName.sellerPayout);
                             },
                           ),
                           ListTile(
@@ -300,7 +306,7 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
                             title: const Text('Help Center'),
                             onTap: () {
                               Navigator.pop(context);
-                              AppAlert.showInfo(context, 'Help Center is under maintenance.');
+                              context.push(RouteName.helpCenter);
                             },
                           ),
                           const SizedBox(height: 20),
@@ -334,7 +340,6 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
       child: Icon(icon, color: AppColors.textDark, size: 24),
     );
   }
-
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Container(

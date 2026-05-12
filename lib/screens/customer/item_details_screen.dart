@@ -7,6 +7,7 @@ import '../../config/app_router.dart';
 import '../../models/item_model.dart';
 import '../../models/feedback_model.dart';
 import '../../widgets/app_widgets.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/direct_chat_provider.dart';
 import '../../widgets/custom_bottom_bar.dart';
@@ -20,6 +21,9 @@ class CustomerItemDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomerItemDetailsScreenState extends ConsumerState<CustomerItemDetailsScreen> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
   @override
   void initState() {
     super.initState();
@@ -252,7 +256,12 @@ class _CustomerItemDetailsScreenState extends ConsumerState<CustomerItemDetailsS
                   if (context.canPop()) {
                     context.pop();
                   } else {
-                    context.go(RouteName.customerHome);
+                    final user = ref.read(authProvider).user;
+                    if (user?.role == UserRole.seller) {
+                      context.go(RouteName.sellerHome);
+                    } else {
+                      context.go(RouteName.customerHome);
+                    }
                   }
                 },
               ),
@@ -291,27 +300,64 @@ class _CustomerItemDetailsScreenState extends ConsumerState<CustomerItemDetailsS
   }
 
   Widget _buildTopSection() {
-    return GestureDetector(
-      onTap: () => FullImageOverlay.show(context, widget.item.imageUrl),
-      child: Container(
-        height: 350,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Hero(
-            tag: widget.item.imageUrl,
-            child: Image.network(
-              widget.item.imageUrl, 
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported, size: 50)),
-            ),
+    final images = widget.item.images.isNotEmpty ? widget.item.images : [widget.item.imageUrl];
+    
+    return Column(
+      children: [
+        Container(
+          height: 350,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) => setState(() => _currentPage = index),
+                  itemCount: images.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () => FullImageOverlay.show(context, images[index]),
+                      child: Hero(
+                        tag: index == 0 ? widget.item.imageUrl : 'image_$index',
+                        child: Image.network(
+                          images[index], 
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported, size: 50)),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (images.length > 1)
+                Positioned(
+                  bottom: 20,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: images.asMap().entries.map((entry) {
+                      return Container(
+                        width: 8.0,
+                        height: 8.0,
+                        margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _currentPage == entry.key ? AppColors.gold : Colors.white.withValues(alpha: 0.5),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+            ],
           ),
         ),
-      ),
+      ],
     );
   }
 

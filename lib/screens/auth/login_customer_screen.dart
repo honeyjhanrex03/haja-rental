@@ -136,14 +136,14 @@ class _LoginCustomerScreenState extends ConsumerState<LoginCustomerScreen> {
                     // Google Button
                     SocialLoginButton(
                       label: 'Continue with Google',
-                      onPressed: () {},
+                      onPressed: () => ref.read(authProvider.notifier).signInWithGoogle(),
                       iconPath: 'assets/images/google.webp',
                     ),
                     const SizedBox(height: 10),
                     // Facebook Button
                     SocialLoginButton(
                       label: 'Continue with Facebook',
-                      onPressed: () {},
+                      onPressed: () => AppAlert.showInfo(context, 'Facebook Sign-In is coming soon!'),
                       iconPath: 'assets/images/facebook.png',
                     ),
                     const Spacer(),

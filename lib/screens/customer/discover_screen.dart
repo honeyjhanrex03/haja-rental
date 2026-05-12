@@ -79,84 +79,94 @@ class CustomerDiscoverScreen extends ConsumerWidget {
     final user = authState.user;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.primary,
       drawer: _buildDrawer(context, ref),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: Column(
         children: [
           _buildHeader(context, screenHeight, user?.address ?? 'Your Location'),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 10),
-                  Text(
-                    'Hi, ${user?.fullName.split(' ').first ?? 'User'}!',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.black,
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    Text(
+                      'Hi, ${user?.fullName.split(' ').first ?? 'User'}!',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.black,
+                      ),
                     ),
-                  ),
-                  const Text(
-                    'New arrivals and exclusive deals are waiting.',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: AppColors.black,
+                    const Text(
+                      'New arrivals and exclusive deals are waiting.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: AppColors.black,
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  // Promo Banner
-                  Expanded(
-                    flex: 12,
-                    child: _buildPromoBanner(),
-                  ),
-                  const Spacer(),
-                  // Categories
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Categories',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.black,
+                    const Spacer(),
+                    // Promo Banner
+                    Expanded(
+                      flex: 12,
+                      child: _buildPromoBanner(),
+                    ),
+                    const Spacer(),
+                    // Categories
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Categories',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.black,
+                          ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () => context.push(RouteName.customerCategory),
-                        child: const Text('See all', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    flex: 10,
-                    child: _buildCategoriesList(context, ref),
-                  ),
-                  const Spacer(),
-                  // Feedbacks
-                  const Text(
-                    'Feedbacks',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.black,
+                        TextButton(
+                          onPressed: () => context.push(RouteName.customerCategory),
+                          child: const Text('See all', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  Expanded(
-                    flex: 8,
-                    child: _buildFeedbackList(ref),
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                    Expanded(
+                      flex: 10,
+                      child: _buildCategoriesList(context, ref),
+                    ),
+                    const Spacer(),
+                    // Feedbacks
+                    const Text(
+                      'Feedbacks',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Expanded(
+                      flex: 8,
+                      child: _buildFeedbackList(ref),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
           ),
@@ -171,10 +181,6 @@ class CustomerDiscoverScreen extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 50, left: 20, right: 20, bottom: 20),
       decoration: const BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,19 +238,19 @@ class CustomerDiscoverScreen extends ConsumerWidget {
           // Search Bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15),
-            height: 45,
+            height: 50,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.white24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
             ),
             child: const TextField(
-              style: TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Search for clothes...',
-                hintStyle: TextStyle(color: Colors.white70, fontSize: 12),
+                hintStyle: TextStyle(color: Colors.white60, fontSize: 13),
                 border: InputBorder.none,
-                icon: Icon(Icons.search, color: Colors.white, size: 20),
+                icon: Icon(Icons.search, color: AppColors.gold, size: 22),
               ),
             ),
           ),

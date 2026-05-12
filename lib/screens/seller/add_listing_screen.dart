@@ -34,8 +34,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
   String _selectedCategory = 'Formal Wear';
   String _selectedSize = 'Medium';
   String _selectedGender = 'Women';
-  XFile? _selectedImage;
-  String? _existingImageUrl;
+  final List<XFile> _selectedImages = [];
+  List<String> _existingImageUrls = [];
   bool _isUploading = false;
   String? _newId; // Store the ID for the current upload attempt
 
@@ -50,7 +50,7 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
     if (widget.itemToEdit != null) {
       _selectedChoose = widget.itemToEdit!.isRental ? 'Rent' : 'Sale';
       _selectedCategory = widget.itemToEdit!.category;
-      _existingImageUrl = widget.itemToEdit!.imageUrl;
+      _existingImageUrls = List<String>.from(widget.itemToEdit!.images);
       _selectedGender = widget.itemToEdit!.gender;
       if (widget.itemToEdit!.availableSizes != null && widget.itemToEdit!.availableSizes!.isNotEmpty) {
         _selectedSize = widget.itemToEdit!.availableSizes!.first;
@@ -67,16 +67,27 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFiles = await picker.pickMultiImage();
 
-    if (pickedFile != null) {
+    if (pickedFiles.isNotEmpty) {
       setState(() {
-        _selectedImage = pickedFile;
-        _existingImageUrl = null;
+        _selectedImages.addAll(pickedFiles);
       });
     }
+  }
+
+  void _removeSelectedImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+  }
+
+  void _removeExistingImage(int index) {
+    setState(() {
+      _existingImageUrls.removeAt(index);
+    });
   }
 
   Future<void> _handleUpload() async {
@@ -85,24 +96,29 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
 
   Future<void> _uploadItem() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedImage == null && _existingImageUrl == null) {
-      AppAlert.showError(context, 'Please select an image');
+    if (_selectedImages.isEmpty && _existingImageUrls.isEmpty) {
+      AppAlert.showError(context, 'Please select at least one image');
       return;
     }
 
     setState(() => _isUploading = true);
 
     try {
-      String? imageUrl = _existingImageUrl;
+      List<String> uploadedUrls = [..._existingImageUrls];
       
-      if (_selectedImage != null) {
+      if (_selectedImages.isNotEmpty) {
         final cloudinary = ref.read(cloudinaryServiceProvider);
-        final bytes = await _selectedImage!.readAsBytes();
-        imageUrl = await cloudinary.uploadImage(bytes, _selectedImage!.name);
+        for (final xfile in _selectedImages) {
+          final bytes = await xfile.readAsBytes();
+          final url = await cloudinary.uploadImage(bytes, xfile.name);
+          if (url != null) {
+            uploadedUrls.add(url);
+          }
+        }
       }
 
-      if (imageUrl == null) {
-        throw Exception('Image upload failed');
+      if (uploadedUrls.isEmpty) {
+        throw Exception('At least one image is required');
       }
 
       final user = Supabase.instance.client.auth.currentUser;
@@ -115,7 +131,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
         name: _nameController.text,
         description: _descriptionController.text,
         price: double.parse(_priceController.text),
-        imageUrl: imageUrl,
+        imageUrl: uploadedUrls.first,
+        images: uploadedUrls,
         category: _selectedCategory,
         sellerId: user.id,
         isRental: _selectedChoose == 'Rent',
@@ -164,32 +181,49 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                        onTap: _pickImage,
-                        child: Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBackground,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.grey[300]!, width: 1),
-                            image: _selectedImage != null 
-                              ? (kIsWeb 
-                                  ? DecorationImage(image: NetworkImage(_selectedImage!.path), fit: BoxFit.cover)
-                                  : DecorationImage(image: FileImage(File(_selectedImage!.path)), fit: BoxFit.cover))
-                              : (_existingImageUrl != null 
-                                  ? DecorationImage(image: NetworkImage(_existingImageUrl!), fit: BoxFit.cover)
-                                  : null),
+                      // Image Selection Area
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Images', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 120,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: [
+                                ..._existingImageUrls.asMap().entries.map((entry) => _buildImageThumbnail(
+                                  entry.value, 
+                                  isNetwork: true, 
+                                  onDelete: () => _removeExistingImage(entry.key)
+                                )),
+                                ..._selectedImages.asMap().entries.map((entry) => _buildImageThumbnail(
+                                  entry.value.path, 
+                                  isNetwork: false, 
+                                  onDelete: () => _removeSelectedImage(entry.key)
+                                )),
+                                GestureDetector(
+                                  onTap: _pickImages,
+                                  child: Container(
+                                    width: 100,
+                                    margin: const EdgeInsets.only(right: 10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.cardBackground,
+                                      borderRadius: BorderRadius.circular(15),
+                                      border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
+                                    ),
+                                    child: const Icon(Icons.add_a_photo_outlined, color: Colors.grey),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: (_selectedImage == null && _existingImageUrl == null) ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.cloud_upload_outlined, size: 40, color: Colors.grey),
-                              SizedBox(height: 10),
-                              Text('Upload Photo here', style: TextStyle(fontSize: 18, color: Colors.grey)),
-                            ],
-                          ) : null,
-                        ),
+                          if (_selectedImages.isEmpty && _existingImageUrls.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8.0),
+                              child: Text('Please upload at least one photo', style: TextStyle(color: Colors.red, fontSize: 12)),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 30),
 
@@ -377,6 +411,35 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
           activeColor: AppColors.gold,
         ),
         Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+  }
+  Widget _buildImageThumbnail(String path, {required bool isNetwork, required VoidCallback onDelete}) {
+    return Stack(
+      children: [
+        Container(
+          width: 100,
+          margin: const EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            image: DecorationImage(
+              image: isNetwork ? NetworkImage(path) : (kIsWeb ? NetworkImage(path) : FileImage(File(path))) as ImageProvider,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        Positioned(
+          top: 5,
+          right: 15,
+          child: GestureDetector(
+            onTap: onDelete,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
+        ),
       ],
     );
   }

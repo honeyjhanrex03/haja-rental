@@ -27,6 +27,21 @@ class ConversationListScreen extends ConsumerWidget {
           'Messages',
           style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.white),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              final user = ref.read(authProvider).user;
+              if (user?.role == UserRole.seller) {
+                context.go(RouteName.sellerHome);
+              } else {
+                context.go(RouteName.customerHome);
+              }
+            }
+          },
+        ),
         centerTitle: true,
       ),
       body: conversationsAsync.when(

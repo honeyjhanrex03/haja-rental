@@ -17,6 +17,7 @@ class Order {
   final DateTime createdAt;
   final bool isRental;
   final String sellerId;
+  final String? deliveryAddress;
 
   Order({
     required this.id,
@@ -35,6 +36,7 @@ class Order {
     required this.createdAt,
     required this.isRental,
     required this.sellerId,
+    this.deliveryAddress,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -56,6 +58,7 @@ class Order {
       isRental: json['is_rental'] ?? true,
       sellerId: json['seller_id']?.toString() ?? 
                 json['items']?['seller_id']?.toString() ?? '',
+      deliveryAddress: json['delivery_address']?.toString(),
     );
   }
 
@@ -85,6 +88,7 @@ class Order {
       'status': _statusToString(status),
       'is_rental': isRental,
       'seller_id': sellerId,
+      'delivery_address': deliveryAddress,
     };
   }
 

@@ -24,7 +24,9 @@ import '../models/chat_models.dart';
 import '../screens/seller/seller_home_screen.dart';
 import '../screens/seller/add_listing_screen.dart';
 import '../screens/seller/view_shop_rentals_screen.dart';
+import '../screens/seller/seller_payout_screen.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
+import '../screens/help_center_screen.dart';
 import '../screens/admin/user_management_screen.dart';
 import '../screens/admin/coupon_management_screen.dart';
 
@@ -52,6 +54,8 @@ class RouteName {
   static const sellerHome = '/seller/home';
   static const sellerAddListing = '/seller/add-listing';
   static const sellerViewShopRentals = '/seller/view-shop-rentals';
+  static const sellerPayout = '/seller/payout';
+  static const helpCenter = '/help-center';
   static const adminDashboard = '/admin/dashboard';
   static const adminUsers = '/admin/users';
   static const adminCoupons = '/admin/coupons';
@@ -94,6 +98,7 @@ class RouterNotifier extends ChangeNotifier {
           path.startsWith('/customer') && 
           path != RouteName.customerProfile &&
           path != RouteName.customerMessages &&
+          path != RouteName.customerNotifications &&
           path != RouteName.customerDirectChat) {
         return RouteName.sellerHome;
       }
@@ -209,6 +214,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ViewShopRentalsScreen(initialTabIndex: tabIndex);
         }
       ),
+      GoRoute(path: RouteName.sellerPayout, builder: (context, state) => const SellerPayoutScreen()),
+      GoRoute(path: RouteName.helpCenter, builder: (context, state) => const HelpCenterScreen()),
       
       // Admin Routes
       GoRoute(path: RouteName.adminDashboard, builder: (context, state) => const AdminDashboardScreen()),

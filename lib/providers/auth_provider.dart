@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:google_sign_in/google_sign_in.dart';
 import '../services/email_service.dart';
 
 // User role enum
@@ -15,6 +16,7 @@ class User {
   final String? avatarUrl;
   final String? contactNumber;
   final String? address;
+  final Map<String, dynamic>? payoutInfo;
   
   User({
     required this.id,
@@ -24,6 +26,7 @@ class User {
     this.avatarUrl,
     this.contactNumber,
     this.address,
+    this.payoutInfo,
   });
 }
 
@@ -68,6 +71,49 @@ class AuthProvider extends Notifier<AuthState> {
     state = state.copyWith(error: null);
   }
   
+  // Google Sign In
+  Future<void> signInWithGoogle({UserRole? role}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      // 1. Trigger Google Sign-In
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      // 2. Get authentication details
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw Exception('No ID Token found.');
+      }
+
+      // 3. Sign in to Supabase
+      final response = await _supabase.auth.signInWithIdToken(
+        provider: sb.OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      if (response.user != null) {
+        // 4. Load or create profile with the selected role
+        await _loadProfile(response.user!.id, role: role);
+      } else {
+        throw Exception('Sign in failed');
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false, 
+        error: 'Google Sign-In failed: ${e.toString()}'
+      );
+    }
+  }
+
   // Login
   Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -143,7 +189,7 @@ class AuthProvider extends Notifier<AuthState> {
     }
   }
   
-  Future<void> _loadProfile(String userId) async {
+  Future<void> _loadProfile(String userId, {UserRole? role}) async {
     try {
       final response = await _supabase
           .from('profiles')
@@ -152,7 +198,7 @@ class AuthProvider extends Notifier<AuthState> {
           .maybeSingle();
           
       final currentUser = _supabase.auth.currentUser;
-      final metaRole = currentUser?.userMetadata?['role'] as String?;
+      final metaRole = role?.name ?? currentUser?.userMetadata?['role'] as String?;
       final metaName = currentUser?.userMetadata?['full_name'] as String?;
       
       Map<String, dynamic> data;
@@ -184,7 +230,7 @@ class AuthProvider extends Notifier<AuthState> {
       }
           
       final roleStr = data['role'] as String? ?? 'customer';
-      final role = UserRole.values.firstWhere(
+      final resolvedRole = UserRole.values.firstWhere(
         (e) => e.name == roleStr,
         orElse: () => UserRole.customer,
       );
@@ -195,10 +241,11 @@ class AuthProvider extends Notifier<AuthState> {
         id: userId,
         email: email,
         fullName: data['full_name'] ?? 'New User',
-        role: role,
+        role: resolvedRole,
         avatarUrl: data['avatar_url'],
         contactNumber: data['contact_number'],
         address: data['address'],
+        payoutInfo: data['payout_info'],
       );
       
       state = state.copyWith(
@@ -220,6 +267,7 @@ class AuthProvider extends Notifier<AuthState> {
     String? fullName,
     String? address,
     String? contactNumber,
+    Map<String, dynamic>? payoutInfo,
   }) async {
     if (state.user == null) return;
     
@@ -235,6 +283,8 @@ class AuthProvider extends Notifier<AuthState> {
             'address': address ?? state.user!.address,
             'contact_number': contactNumber ?? state.user!.contactNumber,
             'role': state.user!.role.name,
+            'avatar_url': state.user!.avatarUrl,
+            'payout_info': payoutInfo ?? state.user!.payoutInfo,
           });
       
       final updatedUser = User(
@@ -245,6 +295,7 @@ class AuthProvider extends Notifier<AuthState> {
         avatarUrl: state.user!.avatarUrl,
         contactNumber: contactNumber ?? state.user!.contactNumber,
         address: address ?? state.user!.address,
+        payoutInfo: payoutInfo ?? state.user!.payoutInfo,
       );
       
       state = state.copyWith(
@@ -310,6 +361,23 @@ class AuthProvider extends Notifier<AuthState> {
   Future<void> logout() async {
     await _supabase.auth.signOut();
     state = const AuthState();
+  }
+
+  // Update Password
+  Future<void> updatePassword(String newPassword) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _supabase.auth.updateUser(
+        sb.UserAttributes(password: newPassword),
+      );
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to update password: ${e.toString()}',
+      );
+      rethrow;
+    }
   }
   
   // Check auth status

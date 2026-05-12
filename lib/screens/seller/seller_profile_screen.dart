@@ -5,6 +5,7 @@ import '../../config/app_colors.dart';
 import '../../config/app_router.dart';
 import '../../widgets/seller_bottom_bar.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/database_provider.dart';
 
 class SellerProfileScreen extends ConsumerWidget {
   const SellerProfileScreen({super.key});
@@ -113,13 +114,26 @@ class SellerProfileScreen extends ConsumerWidget {
           ),
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.inputBackground.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.notifications_none, color: AppColors.white, size: 20),
+              Consumer(
+                builder: (context, ref, child) {
+                  final unreadCount = ref.watch(totalNotificationCountProvider);
+                  return GestureDetector(
+                    onTap: () => context.push(RouteName.customerNotifications),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.inputBackground.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Badge(
+                        label: Text(unreadCount.toString()),
+                        isLabelVisible: unreadCount > 0,
+                        backgroundColor: Colors.red,
+                        child: const Icon(Icons.notifications_none, color: AppColors.white, size: 20),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: 10),
               Container(

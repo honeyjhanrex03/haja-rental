@@ -162,7 +162,12 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
               if (context.canPop()) {
                 context.pop();
               } else {
-                context.go(RouteName.customerHome);
+                final user = ref.read(authProvider).user;
+                if (user?.role == UserRole.seller) {
+                  context.go(RouteName.sellerHome);
+                } else {
+                  context.go(RouteName.customerHome);
+                }
               }
             },
           ),

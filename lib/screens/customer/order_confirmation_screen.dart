@@ -27,6 +27,8 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
   late TextEditingController _expiryController;
   late TextEditingController _cvvController;
   late TextEditingController _cardNameController;
+  late TextEditingController _addressController;
+  bool _saveAsPermanent = false;
 
   String _paymentMethod = 'Cash on Delivery';
   String _selectedSize = 'Medium';
@@ -44,6 +46,10 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
     _expiryController = TextEditingController();
     _cvvController = TextEditingController();
     _cardNameController = TextEditingController();
+    
+    // Initialize address from user profile
+    final user = ref.read(authProvider).user;
+    _addressController = TextEditingController(text: user?.address ?? '');
   }
 
   @override
@@ -53,6 +59,7 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
     _expiryController.dispose();
     _cvvController.dispose();
     _cardNameController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -134,6 +141,11 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
       }
     }
 
+    if (_addressController.text.trim().isEmpty) {
+      AppAlert.showError(context, 'Please provide a delivery address.');
+      return;
+    }
+
     setState(() => _isOrdering = true);
 
     try {
@@ -174,9 +186,15 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
         returnDate: _returnDate,
         size: _selectedSize,
         sellerId: actualSellerId ?? widget.item.sellerId,
+        deliveryAddress: _addressController.text.trim(),
       );
 
       await supabase.from('orders').insert(order.toJson());
+
+      // Update permanent address if requested
+      if (_saveAsPermanent) {
+        await ref.read(authProvider.notifier).updateProfile(address: _addressController.text.trim());
+      }
 
       // Refresh the orders providers so the new order shows up immediately for both buyer and seller
       ref.invalidate(userOrdersProvider);
@@ -363,25 +381,49 @@ class _CustomerOrderConfirmationScreenState extends ConsumerState<CustomerOrderC
                   const Divider(color: Colors.grey, thickness: 1),
                   const SizedBox(height: 15),
 
-                  // Store Location
-                  const Text('Store Location:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  // Delivery Address
+                  const Text('Delivery Address:', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, size: 30),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('Gardini Fashion Center', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                            Text('Panabo City, Davao Del Norte', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: _addressController,
+                          maxLines: 2,
+                          style: const TextStyle(fontSize: 13),
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your complete delivery address',
+                            border: InputBorder.none,
+                            icon: Icon(Icons.delivery_dining_outlined, color: AppColors.primary),
+                          ),
+                        ),
+                        const Divider(),
+                        Row(
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                value: _saveAsPermanent,
+                                activeColor: AppColors.primary,
+                                onChanged: (val) => setState(() => _saveAsPermanent = val ?? false),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text('Save as permanent address', style: TextStyle(fontSize: 12, color: Colors.grey)),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
 
                   // Summary
                   Text(isRental ? 'Rental Summary:' : 'Order Summary:', style: const TextStyle(fontWeight: FontWeight.bold)),

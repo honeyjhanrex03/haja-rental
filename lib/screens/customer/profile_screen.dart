@@ -230,7 +230,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                             title: const Text('Account Security'),
                             onTap: () {
                               Navigator.pop(context);
-                              AppAlert.showInfo(context, 'Account Security features are coming soon!');
+                              _showAccountSecurityDialog();
                             },
                           ),
                           ListTile(
@@ -238,7 +238,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                             title: const Text('Privacy Policy'),
                             onTap: () {
                               Navigator.pop(context);
-                              AppAlert.showInfo(context, 'Privacy Policy will be updated soon.');
+                              _showPrivacyPolicyDialog();
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.help_outline, color: AppColors.gold),
+                            title: const Text('Help Center'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.push(RouteName.helpCenter);
                             },
                           ),
                           ListTile(
@@ -264,6 +272,145 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     );
   }
   
+  void _showAccountSecurityDialog() {
+    final controller = TextEditingController();
+    final confirmController = TextEditingController();
+    bool obscureText = true;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Account Security', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Change your password below.', style: TextStyle(fontSize: 14)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                obscureText: obscureText,
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setDialogState(() => obscureText = !obscureText),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: confirmController,
+                obscureText: obscureText,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm Password',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final password = controller.text.trim();
+                final confirm = confirmController.text.trim();
+                if (password.isEmpty || password.length < 6) {
+                  AppAlert.showError(context, 'Password must be at least 6 characters');
+                  return;
+                }
+                if (password != confirm) {
+                  AppAlert.showError(context, 'Passwords do not match');
+                  return;
+                }
+
+                Navigator.pop(context);
+                setState(() => _isUploading = true);
+                try {
+                  await ref.read(authProvider.notifier).updatePassword(password);
+                  if (!context.mounted) return;
+                  AppAlert.showSuccess(context, 'Password updated successfully!');
+                } catch (e) {
+                  if (!context.mounted) return;
+                  AppAlert.showError(context, 'Failed to update password');
+                } finally {
+                  if (mounted) setState(() => _isUploading = false);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('Update', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPrivacyPolicyDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
+            SizedBox(width: 10),
+            Text('Privacy Policy', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your privacy is important to us. HAJA Rental ("we", "us", "our") is committed to protecting your personal data.',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 15),
+                _buildPolicySection('1. Data Collection', 'We collect information you provide directly to us when you create an account, list an item, or make a rental request.'),
+                _buildPolicySection('2. How We Use Data', 'Your information is used to facilitate rentals, process payments, and provide customer support.'),
+                _buildPolicySection('3. Information Sharing', 'We do not sell your personal data. We share information with other users only as necessary to complete rental transactions.'),
+                _buildPolicySection('4. Security', 'We implement industry-standard security measures to protect your data, including encryption and secure Supabase authentication.'),
+                _buildPolicySection('5. Your Rights', 'You have the right to access, update, or request deletion of your personal data at any time via your profile settings.'),
+                const SizedBox(height: 10),
+                const Text(
+                  'Last Updated: May 2026',
+                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Understood', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPolicySection(String title, String content) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.gold)),
+          const SizedBox(height: 4),
+          Text(content, style: const TextStyle(fontSize: 12, height: 1.4)),
+        ],
+      ),
+    );
+  }
+
   void _showAboutDialog() {
     showDialog(
       context: context,
