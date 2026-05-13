@@ -300,3 +300,33 @@ final sellerAnalyticsProvider = FutureProvider<Map<String, dynamic>>((ref) async
     return {'views': 0, 'favorites': 0, 'earnings': 0.0};
   }
 });
+
+final trendingItemsProvider = FutureProvider<List<Item>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  
+  try {
+    // Fetch items with a basic view count or just the most recent ones as a trend proxy
+    final response = await supabase
+        .from('items')
+        .select('*')
+        .order('created_at', ascending: false)
+        .limit(20);
+    
+    return (response as List).map((e) => Item.fromJson(e)).toList();
+  } catch (e) {
+    debugPrint('Error fetching trending items: $e');
+    return [];
+  }
+});
+
+final singleItemProvider = FutureProvider.family<Item?, String>((ref, id) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase.from('items').select().eq('id', id).maybeSingle();
+    if (response == null) return null;
+    return Item.fromJson(response);
+  } catch (e) {
+    debugPrint('Error fetching single item: $e');
+    return null;
+  }
+});

@@ -7,16 +7,15 @@ HAJA is a premium, fully responsive Flutter application designed for the modern 
 ## 🚀 Key Features
 
 ### 👤 User Roles
-- **Customers**: Browse curated collections, book rentals, track orders, and chat with an AI Smart Stylist.
-- **Sellers**: Manage shop listings, track rental income, upload product images via Cloudinary, and receive real-time support.
+- **Customers**: Browse curated collections, book rentals, track orders, and receive expert fashion advice from an **Intelligent AI Smart Stylist**.
+- **Sellers**: Manage shop listings, track rental income, upload product images via Cloudinary, and get professional business support from a dedicated AI Assistant.
 - **Admins**: Platform-wide analytics, user management, and system monitoring.
 
 ### ✨ Advanced Functionality
-- **AI Smart Stylist**: Integrated with Groq (Llama 3) to provide real-time fashion advice based on actual shop inventory.
-- **Real-Time Messaging**: Seamless chat between buyers and sellers powered by Supabase.
-- **Smart Notifications**: Automated email updates via Brevo (Sendinblue) for order status changes.
-- **Responsive Design**: Optimized for Mobile, Tablet, and Desktop platforms.
-- **Secure Payments**: Mock implementation ready for production payment gateway integration.
+- **High-Intelligence AI Stylist**: Powered by Groq (Llama 3), the AI is deeply integrated with the shop's live inventory, user favorites, and local trends. It provides personalized style advice and interactive **Product Recommendation Cards** that link directly to checkout.
+- **Real-Time Messaging**: Seamless chat between buyers and sellers with instant unread notification synchronization.
+- **Smart Notifications**: Intelligent notification badge system and automated email updates via Brevo for all order status transitions.
+- **Premium Design System**: A sophisticated, responsive UI optimized for Mobile, Tablet, and Desktop, featuring custom-generated branding assets and a consistent luxury aesthetic.
 
 ## 🛠 Tech Stack
 

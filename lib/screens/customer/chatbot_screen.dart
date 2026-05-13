@@ -4,6 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../config/app_colors.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/cloudinary_provider.dart';
+import '../../providers/database_provider.dart';
+import '../../config/app_router.dart';
+import 'package:go_router/go_router.dart';
 
 class ChatBotScreen extends ConsumerStatefulWidget {
   final NotifierProvider<ChatNotifier, ChatState> provider;
@@ -74,11 +77,7 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
           children: [
             CircleAvatar(
               backgroundColor: AppColors.white,
-              child: Icon(
-                isCustomer ? Icons.auto_awesome : Icons.support_agent, 
-                color: AppColors.primary, 
-                size: 20
-              ),
+              backgroundImage: const AssetImage('assets/icons/ai_stylist.png'),
             ),
             const SizedBox(width: 12),
             Column(
@@ -150,7 +149,7 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
               CircleAvatar(
                 radius: 15,
                 backgroundColor: AppColors.gold,
-                child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+                backgroundImage: const AssetImage('assets/icons/ai_stylist.png'),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -225,54 +224,163 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
   }
 
   Widget _buildChatBubble(ChatMessage message) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 15),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: message.isUser ? AppColors.primary : AppColors.cardBackground,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(message.isUser ? 20 : 0),
-            bottomRight: Radius.circular(message.isUser ? 0 : 20),
+    // Check if message contains [ITEM_ID: <id>]
+    final productMatch = RegExp(r'\[ITEM_ID:\s*(.*?)\]').firstMatch(message.text);
+    final String? productId = productMatch?.group(1)?.trim();
+    final String cleanText = message.text.replaceAll(RegExp(r'\[ITEM_ID:\s*.*?\]'), '').trim();
+
+    return Column(
+      crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+            decoration: BoxDecoration(
+              color: message.isUser ? AppColors.primary : AppColors.cardBackground,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(20),
+                topRight: const Radius.circular(20),
+                bottomLeft: Radius.circular(message.isUser ? 20 : 0),
+                bottomRight: Radius.circular(message.isUser ? 0 : 20),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (message.imageUrl != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      message.imageUrl!,
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                message.isUser 
+                  ? Text(
+                      message.text,
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 14,
+                      ),
+                    )
+                  : TypewriterText(
+                      text: cleanText,
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 14,
+                      ),
+                    ),
+              ],
+            ),
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (message.imageUrl != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  message.imageUrl!,
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+        if (!message.isUser && productId != null) 
+          _buildProductRecommendationCard(productId),
+      ],
+    );
+  }
+
+  Widget _buildProductRecommendationCard(String productId) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final itemAsync = ref.watch(singleItemProvider(productId));
+        
+        return itemAsync.when(
+          data: (item) {
+            if (item == null) return const SizedBox.shrink();
+            return GestureDetector(
+              onTap: () {
+                // Navigate to item details
+                context.push(RouteName.customerItemDetails, extra: item);
+              },
+              child: Container(
+                margin: const EdgeInsets.only(left: 40, bottom: 20, right: 20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        item.imageUrl,
+                        height: 80,
+                        width: 70,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(color: Colors.grey[200], width: 70, height: 80, child: const Icon(Icons.image_outlined)),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            item.description,
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '₱${item.price}',
+                                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gold,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Text(
+                                  'View',
+                                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-            ],
-            message.isUser 
-              ? Text(
-                  message.text,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 14,
-                  ),
-                )
-              : TypewriterText(
-                  text: message.text,
-                  style: const TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 14,
-                  ),
-                ),
-          ],
-        ),
-      ),
+            );
+          },
+          loading: () => const Padding(
+            padding: EdgeInsets.only(left: 40, bottom: 20),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          error: (e, s) => const SizedBox.shrink(),
+        );
+      },
     );
   }
 

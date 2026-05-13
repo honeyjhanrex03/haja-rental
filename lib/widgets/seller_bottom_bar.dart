@@ -116,10 +116,9 @@ class SellerBottomNavBar extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.network(
-                      'https://cdn-icons-png.flaticon.com/512/2040/2040946.png',
+                    Image.asset(
+                      'assets/icons/ai_stylist.png',
                       height: 40,
-                      color: AppColors.white,
                     ),
                   ],
                 ),

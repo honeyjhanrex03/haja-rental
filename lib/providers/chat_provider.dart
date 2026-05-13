@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/env.dart';
 import 'database_provider.dart';
+import 'auth_provider.dart';
+import '../models/category_model.dart';
 
 class ChatService {
   final Dio _dio = Dio();
@@ -97,20 +99,41 @@ class ChatNotifier extends Notifier<ChatState> {
       isLoading: true,
     );
 
-    // Fetch real inventory data from Supabase to make the AI "Smart"
+    // Enrich with collection knowledge, categories, trends, and user preferences
     String enrichedPrompt = systemPrompt;
     try {
       final items = await ref.read(itemsProvider((isRental: null, category: null, gender: null)).future);
+      final trends = await ref.read(trendingItemsProvider.future);
+      final categories = await ref.read(categoriesProvider(CategoryType.rental).future);
+      final favorites = await ref.read(favoriteItemsProvider.future);
+      final user = ref.read(authProvider).user;
+      
+      if (user != null) {
+        enrichedPrompt += "\n\nUser Profile:\nName: ${user.fullName}\nLocation: ${user.address ?? 'N/A'}\n"
+            "Greet the user by their first name naturally. Suggest items suitable for their location if relevant.";
+      }
+
+      if (favorites.isNotEmpty) {
+        final favList = favorites.map((i) => i.name).join(", ");
+        enrichedPrompt += "\n\nUser's Personal Style (Items they liked):\n$favList\n"
+            "Use these favorites to understand their taste and suggest similar or complementary pieces.";
+      }
+
       if (items.isNotEmpty) {
-        final inventoryList = items.take(15).map((i) => 
-          "- ${i.name} (${i.category}): ${i.description} [Gender: ${i.gender}, Sizes: ${i.availableSizes?.join(', ') ?? 'N/A'}, Price: ₱${i.price}]"
+        final collectionList = items.take(30).map((i) => 
+          "- ${i.name} (ID: ${i.id}, Category: ${i.category}): ${i.description} [Gender: ${i.gender}, Sizes: ${i.availableSizes?.join(', ') ?? 'N/A'}, Price: ₱${i.price}]"
         ).join("\n");
         
-        enrichedPrompt += "\n\nACTUAL INVENTORY IN THE SHOP (Real items from database):\n$inventoryList\n\n"
-            "Use the items above to provide REAL suggestions. Mention the gender suitability and sizes if relevant to the user's question.";
+        final trendsList = trends.take(5).map((i) => "- ${i.name} (ID: ${i.id})").join("\n");
+        final categoryNames = categories.map((c) => c.name).join(", ");
+        
+        enrichedPrompt += "\n\nOur Current Collection (USE THE IDs to recommend):\n$collectionList\n\n"
+            "Recently Added & Popular Trends:\n$trendsList\n\n"
+            "Shop Categories: $categoryNames\n\n"
+            "MANDATORY: When you recommend an item from our collection, you MUST include its ID at the end of your sentence in this exact format: [ITEM_ID: its_id_here]. This will show a product card to the user.";
       }
     } catch (e) {
-      debugPrint("AI Inventory fetch failed: $e");
+      debugPrint("AI data enrichment failed: $e");
     }
 
     final history = state.messages.map((m) {
@@ -153,10 +176,11 @@ class ChatNotifier extends Notifier<ChatState> {
 final customerChatProvider = NotifierProvider<ChatNotifier, ChatState>(() {
   return ChatNotifier(
     apiKey: Env.customerGroqKey,
-    systemPrompt: 'You are HAJA AI, the Smart Stylist for the HAJA Rental app. 🌸 '
-    'You are connected to our real-time database! You don\'t just give general advice; you suggest REAL items from our inventory. '
-    'When a user asks for an outfit, event advice, or mix-and-match suggestions, look at the ACTUAL INVENTORY list provided and recommend items by name. '
-    'Explain WHY those items work for their event. Be extremely helpful, warm, and expert in fashion. '
+    systemPrompt: 'You are HAJA AI, the expert Smart Stylist for HAJA. 🌸 '
+    'You have deep knowledge of everything we have in our collection and you keep a close eye on the latest local fashion trends. '
+    'Suggest REAL items from our collection and explain why they are perfect for the user\'s needs. '
+    'Be warm, sophisticated, and expert. Avoid technical talk about data, databases, or systems; just speak like a knowledgeable friend who knows our closet inside out. '
+    'Whenever you recommend a specific item, you MUST append [ITEM_ID: <id>] to your recommendation. '
     'STRICT RULE: Never use ** for bolding. Speak naturally and like a high-end personal stylist!'
   );
 });
@@ -166,9 +190,10 @@ final sellerChatProvider = NotifierProvider<ChatNotifier, ChatState>(() {
   return ChatNotifier(
     apiKey: Env.sellerGroqKey,
     systemPrompt: 'You are HAJA Seller Support, the expert partner for everyone selling on HAJA. ✨ '
-    'You have full knowledge of the seller dashboard. You can help sellers add listings, select the correct gender and sizes for their items, and manage their shop. '
-    'You know how the rental system works for them, including tracking payouts and managing order statuses like To Ship. '
-    'Be the ultimate supportive colleague. Be very kind, professional, and clear. '
-    'STRICT RULE: Do not use markdown like **. Speak naturally and help our sellers succeed!'
+    'You are here to help our sellers succeed and grow their business. '
+    'You can guide them through adding listings, managing their shop, and handling rentals and orders professionally. '
+    'Be the ultimate supportive colleague—kind, clear, and encouraging. '
+    'Avoid technical terms like "backend" or "database"; just talk about their shop and their items. '
+    'STRICT RULE: Do not use markdown like **. Speak naturally and help our sellers thrive!'
   );
 });
