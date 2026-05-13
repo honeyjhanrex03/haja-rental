@@ -321,7 +321,7 @@ class _CustomerItemDetailsScreenState extends ConsumerState<CustomerItemDetailsS
                   itemCount: images.length,
                   itemBuilder: (context, index) {
                     return GestureDetector(
-                      onTap: () => FullImageOverlay.show(context, images[index]),
+                      onTap: () => FullImageOverlay.show(context, images, initialIndex: index),
                       child: Hero(
                         tag: index == 0 ? widget.item.imageUrl : 'image_$index',
                         child: Image.network(

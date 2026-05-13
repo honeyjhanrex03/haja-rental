@@ -422,9 +422,44 @@ class AppAlert {
     );
   }
 }
-class FullImageOverlay extends StatelessWidget {
-  final String imageUrl;
-  const FullImageOverlay({super.key, required this.imageUrl});
+class FullImageOverlay extends StatefulWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+  const FullImageOverlay({super.key, required this.imageUrls, this.initialIndex = 0});
+
+  @override
+  State<FullImageOverlay> createState() => _FullImageOverlayState();
+
+  static void show(BuildContext context, List<String> imageUrls, {int initialIndex = 0}) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (context, _, _) => FullImageOverlay(imageUrls: imageUrls, initialIndex: initialIndex),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+}
+
+class _FullImageOverlayState extends State<FullImageOverlay> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -434,51 +469,67 @@ class FullImageOverlay extends StatelessWidget {
         backgroundColor: Colors.black.withValues(alpha: 0.9),
         body: Stack(
           children: [
-            Center(
-              child: Hero(
-                tag: imageUrl,
-                child: InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: imageUrl.startsWith('assets/') 
-                    ? Image.asset(imageUrl, fit: BoxFit.contain)
-                    : Image.network(
-                        imageUrl,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(child: CircularProgressIndicator(color: AppColors.gold));
-                        },
-                      ),
-                ),
-              ),
+            PageView.builder(
+              controller: _pageController,
+              itemCount: widget.imageUrls.length,
+              onPageChanged: (index) => setState(() => _currentIndex = index),
+              itemBuilder: (context, index) {
+                final url = widget.imageUrls[index];
+                return Center(
+                  child: Hero(
+                    tag: index == 0 ? url : 'image_overlay_$index',
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: url.startsWith('assets/') 
+                        ? Image.asset(url, fit: BoxFit.contain)
+                        : Image.network(
+                            url,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+                            },
+                          ),
+                    ),
+                  ),
+                );
+              },
             ),
+            // Header with Close and Indicator
             Positioned(
               top: 50,
+              left: 20,
               right: 20,
-              child: Container(
-                decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (widget.imageUrls.length > 1)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_currentIndex + 1} / ${widget.imageUrls.length}',
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  Container(
+                    decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  static void show(BuildContext context, String imageUrl) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (context, _, _) => FullImageOverlay(imageUrl: imageUrl),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
       ),
     );
   }
