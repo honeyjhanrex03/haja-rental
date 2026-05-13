@@ -25,17 +25,8 @@ class LandingScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 Image.asset(
                   'assets/logo.png',
-                  height: screenHeight * 0.2,
+                  height: screenHeight * 0.35,
                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_bag, size: 100),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'H A J A',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 8, color: AppColors.black),
-                ),
-                const Text(
-                  'Rentals & Apparel',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300, color: AppColors.black),
                 ),
               ],
             ),

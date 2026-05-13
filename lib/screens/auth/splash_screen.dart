@@ -74,27 +74,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               children: [
                 Image.asset(
                   'assets/logo.png',
-                  width: 280,
-                  height: 280,
+                  width: 350,
+                  height: 350,
                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_bag, size: 150),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'H A J A',
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 10,
-                    color: AppColors.black,
-                  ),
-                ),
-                const Text(
-                  'Rentals & Apparel',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w300,
-                    color: AppColors.black,
-                  ),
                 ),
               ],
             ),
