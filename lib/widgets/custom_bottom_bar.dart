@@ -102,9 +102,10 @@ class CustomBottomNavBar extends StatelessWidget {
               height: 80,
               width: 80,
               decoration: BoxDecoration(
-                color: AppColors.black,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.gold, width: 2),
+                image: const DecorationImage(
+                  image: AssetImage('assets/icons/ai_stylist.png'),
+                  fit: BoxFit.cover,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.gold.withValues(alpha: 0.3),
@@ -113,17 +114,7 @@ class CustomBottomNavBar extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/icons/ai_stylist.png',
-                      height: 40,
-                    ),
-                  ],
-                ),
-              ),
+              child: const SizedBox.shrink(),
             ),
           ),
         ),
