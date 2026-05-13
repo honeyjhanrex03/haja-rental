@@ -99,13 +99,15 @@ class CustomBottomNavBar extends StatelessWidget {
               );
             },
             child: Container(
-              height: 80,
-              width: 80,
+              height: 65,
+              width: 65,
               decoration: BoxDecoration(
+                shape: BoxShape.circle,
                 image: const DecorationImage(
                   image: AssetImage('assets/icons/ai_stylist.png'),
                   fit: BoxFit.cover,
                 ),
+                border: Border.all(color: AppColors.gold, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.gold.withValues(alpha: 0.3),
