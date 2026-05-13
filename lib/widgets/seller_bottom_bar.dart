@@ -76,7 +76,7 @@ class SellerBottomNavBar extends StatelessWidget {
           ),
         ),
         Positioned(
-          top: -30,
+          top: -25,
           left: MediaQuery.of(context).size.width / 2 - 32.5,
           child: GestureDetector(
             onTap: () {
