@@ -76,9 +76,11 @@ class SellerBottomNavBar extends StatelessWidget {
           ),
         ),
         Positioned(
-          top: -35,
-          left: MediaQuery.of(context).size.width / 2 - 40,
-          child: GestureDetector(
+          top: -20,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: GestureDetector(
             onTap: () {
               showModalBottomSheet(
                 context: context,
@@ -116,6 +118,7 @@ class SellerBottomNavBar extends StatelessWidget {
                 ],
               ),
               child: const SizedBox.shrink(),
+            ),
             ),
           ),
         ),

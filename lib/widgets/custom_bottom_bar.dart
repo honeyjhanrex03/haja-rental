@@ -76,9 +76,11 @@ class CustomBottomNavBar extends StatelessWidget {
           ),
         ),
         Positioned(
-          top: -35,
-          left: MediaQuery.of(context).size.width / 2 - 40,
-          child: GestureDetector(
+          top: -20,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: GestureDetector(
             onTap: () {
               // Open Chatbot as a persistent bottom sheet or full screen
               showModalBottomSheet(
@@ -117,6 +119,7 @@ class CustomBottomNavBar extends StatelessWidget {
                 ],
               ),
               child: const SizedBox.shrink(),
+            ),
             ),
           ),
         ),
