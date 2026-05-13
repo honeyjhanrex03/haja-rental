@@ -2,7 +2,6 @@
 
 HAJA is a premium, fully responsive Flutter application designed for the modern fashion rental marketplace. It bridges the gap between style and sustainability by allowing users to rent high-end apparel for any occasion.
 
-![HAJA Banner](flutter_01.png)
 
 ## 🚀 Key Features
 
@@ -26,12 +25,6 @@ HAJA is a premium, fully responsive Flutter application designed for the modern 
 - **AI Engine**: [Groq Cloud](https://groq.com/)
 - **Image Hosting**: [Cloudinary](https://cloudinary.com/)
 - **Email Service**: [Brevo](https://www.brevo.com/)
-
-## 📸 Screenshots
-
-| Login | Dashboard | Shop Management |
-| :---: | :---: | :---: |
-| ![Login](flutter_02.png) | ![Dashboard](flutter_03.png) | ![Seller](flutter_04.png) |
 
 ## ⚙️ Getting Started
 
