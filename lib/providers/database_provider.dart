@@ -13,14 +13,43 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
 
+// Track seen notification keys (e.g., 'orderId_status') to clear badges after viewing
+final seenNotificationKeysProvider = NotifierProvider<SeenNotificationsNotifier, Set<String>>(SeenNotificationsNotifier.new);
+
+class SeenNotificationsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => {};
+
+  void markAsSeen(String key) {
+    if (!state.contains(key)) {
+      state = {...state, key};
+    }
+  }
+
+  void markMultipleAsSeen(List<String> keys) {
+    state = {...state, ...keys};
+  }
+}
+
 final totalNotificationCountProvider = Provider<int>((ref) {
   final messageCount = ref.watch(unreadMessageCountProvider).maybeWhen(data: (count) => count, orElse: () => 0);
+  final seenKeys = ref.watch(seenNotificationKeysProvider);
+  
   final orders = ref.watch(userOrdersProvider).maybeWhen(
-    data: (list) => list.where((o) => o.status == OrderStatus.toPay || o.status == OrderStatus.toShip).length, 
+    data: (list) => list.where((o) {
+      final isPending = o.status == OrderStatus.toPay || o.status == OrderStatus.toShip;
+      final key = '${o.id}_${o.status}';
+      return isPending && !seenKeys.contains(key);
+    }).length, 
     orElse: () => 0
   );
+  
   final sellerOrders = ref.watch(sellerOrdersProvider).maybeWhen(
-    data: (list) => list.where((o) => o.status == OrderStatus.toPay || o.status == OrderStatus.toShip).length, 
+    data: (list) => list.where((o) {
+      final isPending = o.status == OrderStatus.toPay || o.status == OrderStatus.toShip;
+      final key = '${o.id}_${o.status}';
+      return isPending && !seenKeys.contains(key);
+    }).length, 
     orElse: () => 0
   );
   

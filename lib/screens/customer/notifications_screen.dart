@@ -8,14 +8,55 @@ import '../../providers/direct_chat_provider.dart';
 import '../../providers/database_provider.dart';
 import '../../models/order_model.dart';
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Mark notifications as seen after a short delay to ensure data is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markAllAsSeen();
+    });
+  }
+
+  void _markAllAsSeen() {
+    final orders = ref.read(userOrdersProvider).maybeWhen(data: (list) => list, orElse: () => <Order>[]);
+    final sellerOrders = ref.read(sellerOrdersProvider).maybeWhen(data: (list) => list, orElse: () => <Order>[]);
+    
+    final List<String> keysToMark = [];
+    
+    for (final o in orders) {
+      if (o.status == OrderStatus.toPay || o.status == OrderStatus.toShip) {
+        keysToMark.add('${o.id}_${o.status}');
+      }
+    }
+    
+    for (final o in sellerOrders) {
+      if (o.status == OrderStatus.toPay || o.status == OrderStatus.toShip) {
+        keysToMark.add('${o.id}_${o.status}');
+      }
+    }
+    
+    if (keysToMark.isNotEmpty) {
+      ref.read(seenNotificationKeysProvider.notifier).markMultipleAsSeen(keysToMark);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final unreadMessages = ref.watch(unreadMessageCountProvider).maybeWhen(data: (count) => count, orElse: () => 0);
     final ordersAsync = ref.watch(userOrdersProvider);
     final sellerOrdersAsync = ref.watch(sellerOrdersProvider);
+
+    // Also mark as seen if new orders arrive while viewing
+    ref.listen(userOrdersProvider, (prev, next) => _markAllAsSeen());
+    ref.listen(sellerOrdersProvider, (prev, next) => _markAllAsSeen());
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -86,7 +127,9 @@ class NotificationsScreen extends ConsumerWidget {
             error: (e, s) => const SizedBox.shrink(),
           ),
 
-          if (unreadMessages == 0)
+          if (unreadMessages == 0 && 
+              ordersAsync.maybeWhen(data: (l) => l.where((o) => o.status == OrderStatus.toPay || o.status == OrderStatus.toShip).isEmpty, orElse: () => true) &&
+              sellerOrdersAsync.maybeWhen(data: (l) => l.where((o) => o.status == OrderStatus.toPay || o.status == OrderStatus.toShip).isEmpty, orElse: () => true))
             const Center(
               child: Padding(
                 padding: EdgeInsets.only(top: 100),

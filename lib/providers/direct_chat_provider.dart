@@ -131,15 +131,22 @@ class DirectChatService {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return;
 
-    await supabase
-        .from('messages')
-        .update({'is_read': true})
-        .eq('conversation_id', conversationId)
-        .neq('sender_id', userId)
-        .eq('is_read', false);
-    
-    // Invalidating unread count to refresh the badge
-    ref.invalidate(unreadMessageCountProvider);
+    try {
+      final response = await supabase
+          .from('messages')
+          .update({'is_read': true})
+          .eq('conversation_id', conversationId)
+          .neq('sender_id', userId)
+          .eq('is_read', false)
+          .select();
+      
+      debugPrint('Marked ${(response as List).length} messages as read for conversation $conversationId');
+      
+      // Invalidating unread count to refresh the badge
+      ref.invalidate(unreadMessageCountProvider);
+    } catch (e) {
+      debugPrint('Error marking messages as read: $e');
+    }
   }
 
   Future<void> deleteConversation(String conversationId) async {
@@ -166,17 +173,19 @@ final unreadMessageCountProvider = StreamProvider<int>((ref) {
   final supabase = ref.watch(supabaseClientProvider);
   if (userId == null) return Stream.value(0);
 
-  // This stream listens to all messages where the recipient is the current user and is_read is false
-  // Note: Since we can't easily join conversations in a stream to check if userId is a participant,
-  // we listen to ALL unread messages and filter in memory for simplicity in this demo.
+  // listen to the messages table for any changes to unread messages
+  // We use a stream that triggers on any change to 'is_read'
   return supabase
       .from('messages')
       .stream(primaryKey: ['id'])
       .eq('is_read', false)
       .map((data) {
         // Only count messages where I am NOT the sender 
-        // (and ideally where I am part of the conversation, but this is a good enough proxy)
-        return data.where((m) => m['sender_id'] != userId).length;
+        // This is a proxy for "messages sent to me" assuming RLS is correct.
+        // We filter in memory to ensure we only count what belongs to the user.
+        final unread = data.where((m) => m['sender_id'] != userId).length;
+        debugPrint('Unread message count updated: $unread');
+        return unread;
       });
 });
 
