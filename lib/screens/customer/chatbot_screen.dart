@@ -146,40 +146,74 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
 
   Widget _buildEmptyState(bool isCustomer) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Assistant Welcome Bubble
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 15,
-                backgroundColor: Colors.transparent,
-                backgroundImage: const AssetImage('assets/icons/ai_stylist.png'),
+          // Premium Branding Image
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              image: const DecorationImage(
+                image: AssetImage('assets/icons/ai_stylist_branding.png'),
+                fit: BoxFit.cover,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50]?.withValues(alpha: 0.5),
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(20),
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Text(
-                    isCustomer 
-                      ? "Hi! I'm your style assistant. Send a clothing item and I'll suggest outfits that match it. I can also help if you have questions about sizes, rentals, or categories."
-                      : "Hi! I'm your seller support assistant. I can help you manage your shop, list new items, and optimize your sales!",
-                    style: TextStyle(color: Colors.blueGrey[800], fontSize: 14),
-                  ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+          
+          // Welcome Content
+          const Text(
+            'HAJA Smart Stylist',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isCustomer 
+              ? 'Your personal fashion expert for any occasion.'
+              : 'Your dedicated partner in business growth.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textDark.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 30),
+          
+          // Initial Guidance
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.auto_awesome, color: AppColors.gold, size: 24),
+                const SizedBox(height: 12),
+                Text(
+                  isCustomer
+                    ? 'How can I help you today? Tell me about your upcoming event, and I\'ll find the perfect match from our closet.'
+                    : 'I can help you manage your shop, optimize your listings, or answer questions about your rentals.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14, height: 1.5),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 30),
           

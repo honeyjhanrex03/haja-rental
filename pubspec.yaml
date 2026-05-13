@@ -80,6 +80,8 @@ flutter:
     - assets/
     - assets/images/
     - assets/icons/
+    - assets/icons/ai_stylist.png
+    - assets/icons/ai_stylist_branding.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
