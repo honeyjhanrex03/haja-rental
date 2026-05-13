@@ -84,7 +84,7 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.white,
+              backgroundColor: Colors.transparent,
               backgroundImage: const AssetImage('assets/icons/ai_stylist.png'),
             ),
             const SizedBox(width: 12),
@@ -156,7 +156,7 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
             children: [
               CircleAvatar(
                 radius: 15,
-                backgroundColor: AppColors.gold,
+                backgroundColor: Colors.transparent,
                 backgroundImage: const AssetImage('assets/icons/ai_stylist.png'),
               ),
               const SizedBox(width: 10),
