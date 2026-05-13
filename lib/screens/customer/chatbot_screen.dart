@@ -19,6 +19,14 @@ class ChatBotScreen extends ConsumerStatefulWidget {
 class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  int _initialMessageCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Record the number of messages already present when the screen opens
+    _initialMessageCount = ref.read(widget.provider).messages.length;
+  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -117,7 +125,7 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
-                      return _buildChatBubble(message);
+                      return _buildChatBubble(message, index);
                     },
                   ),
           ),
@@ -223,7 +231,7 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
     _scrollToBottom();
   }
 
-  Widget _buildChatBubble(ChatMessage message) {
+  Widget _buildChatBubble(ChatMessage message, int index) {
     // Check if message contains [ITEM_ID: <id>]
     final productMatch = RegExp(r'\[ITEM_ID:\s*(.*?)\]').firstMatch(message.text);
     final String? productId = productMatch?.group(1)?.trim();
@@ -272,6 +280,7 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
                     )
                   : TypewriterText(
                       text: cleanText,
+                      animate: index >= _initialMessageCount,
                       style: const TextStyle(
                         color: AppColors.textDark,
                         fontSize: 14,
@@ -458,8 +467,14 @@ class _ChatBotScreenState extends ConsumerState<ChatBotScreen> {
 class TypewriterText extends StatefulWidget {
   final String text;
   final TextStyle style;
+  final bool animate;
 
-  const TypewriterText({super.key, required this.text, required this.style});
+  const TypewriterText({
+    super.key, 
+    required this.text, 
+    required this.style,
+    this.animate = true,
+  });
 
   @override
   State<TypewriterText> createState() => _TypewriterTextState();
@@ -476,10 +491,13 @@ class _TypewriterTextState extends State<TypewriterText> with AutomaticKeepAlive
   @override
   void initState() {
     super.initState();
-    // Faster typing for longer messages
-    final speed = widget.text.length > 100 ? 5 : 15;
-    _typingSpeed = Duration(milliseconds: speed);
-    _startTyping();
+    if (widget.animate) {
+      final speed = widget.text.length > 100 ? 5 : 15;
+      _typingSpeed = Duration(milliseconds: speed);
+      _startTyping();
+    } else {
+      _displayedText = widget.text;
+    }
   }
 
   void _startTyping() {
