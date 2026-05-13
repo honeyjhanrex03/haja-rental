@@ -222,7 +222,7 @@ class _ViewShopRentalsScreenState extends ConsumerState<ViewShopRentalsScreen> w
       children: [
         Expanded(
           child: GestureDetector(
-            onTap: () => FullImageOverlay.show(context, item.imageUrl),
+            onTap: () => FullImageOverlay.show(context, item.images.isNotEmpty ? item.images : [item.imageUrl]),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.grey[100],
